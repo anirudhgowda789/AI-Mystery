@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Mystery Room | Procedural Detective Investigation</title>
+  <meta name="description" content="Step into an AI-powered interactive crime scene investigation room. Interrogate suspects, examine forensic evidence, uncover contradictions, and identify the culprit before the trail goes cold.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="noir-theme">
+  <!-- Atmospheric Background Overlays -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="film-grain"></div>
+
+  <!-- Main Application Wrapper -->
+  <div id="app" class="app-layout">
+    
+    <!-- Top Header & Investigation HUD -->
+    <header class="hud-header" id="hud-header">
+      <div class="header-branding">
+        <div class="detective-badge">
+          <span class="badge-icon">🕵️</span>
+          <span class="badge-text">SPECIAL CRIMES DIVISION</span>
+        </div>
+        <h1 class="case-headline" id="case-title">Loading Active Investigation...</h1>
+        <div class="case-meta-row" id="case-meta-row">
+          <span class="meta-tag" id="case-theme-tag">Theme: Classic Noir</span>
+          <span class="meta-tag" id="case-diff-tag">Difficulty: Normal</span>
+          <span class="meta-tag location-tag" id="case-location-tag">📍 Scene: Unknown</span>
+        </div>
+      </div>
+
+      <!-- Investigation Metrics & Controls -->
+      <div class="header-hud-stats">
+        <div class="stat-card" id="stat-attempts-card" title="Accusation strikes remaining before case goes cold">
+          <span class="stat-label">STRIKES REMAINING</span>
+          <div class="stat-value strikes-container" id="strikes-display">
+            <span class="strike-bullet active">●</span>
+            <span class="strike-bullet active">●</span>
+            <span class="strike-bullet active">●</span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="stat-evidence-card" title="Forensic evidence examined">
+          <span class="stat-label">CLUES EXAMINED</span>
+          <div class="stat-value" id="evidence-progress-text">0 / 0</div>
+          <div class="mini-progress-bar">
+            <div class="mini-progress-fill" id="evidence-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="stat-card" id="stat-score-card">
+          <span class="stat-label">DETECTIVE RATING</span>
+          <div class="stat-value rank-text" id="detective-rank-text">Apprentice</div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-secondary" id="btn-open-generator" title="Generate a fresh case with Gemini AI">
+            <span class="btn-icon">⚡</span>
+            <span>New Case</span>
+          </button>
+          <button class="btn btn-icon-only" id="btn-toggle-audio" title="Toggle investigation sound effects">
+            <span id="audio-icon">🔊</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Navigation Bar -->
+    <nav class="workbench-nav" id="workbench-nav" aria-label="Investigation Workbench Navigation">
+      <button class="nav-tab active" data-tab="briefing" id="tab-briefing">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Case Dossier</span>
+      </button>
+      <button class="nav-tab" data-tab="suspects" id="tab-suspects">
+        <span class="tab-icon">👥</span>
+        <span class="tab-label">Suspects Roster</span>
+        <span class="tab-counter" id="suspects-badge">0</span>
+      </button>
+      <button class="nav-tab" data-tab="evidence" id="tab-evidence">
+        <span class="tab-icon">🔬</span>
+        <span class="tab-label">Evidence Locker</span>
+        <span class="tab-counter" id="evidence-badge">0</span>
+      </button>
+      <button class="nav-tab" data-tab="pinboard" id="tab-pinboard">
+        <span class="tab-icon">📌</span>
+        <span class="tab-label">Evidence Pinboard</span>
+      </button>
+      <button class="nav-tab" data-tab="accusation" id="tab-accusation">
+        <span class="tab-icon">⚖️</span>
+        <span class="tab-label">Indictment Chamber</span>
+      </button>
+      <button class="nav-tab" data-tab="notebook" id="tab-notebook">
+        <span class="tab-icon">📓</span>
+        <span class="tab-label">Detective Notebook</span>
+      </button>
+    </nav>
+
+    <!-- Status Banner for Solved or Failed Cases -->
+    <div class="case-status-banner hidden" id="case-status-banner">
+      <div class="banner-content">
+        <span class="banner-icon" id="banner-icon">🏆</span>
+        <div class="banner-text">
+          <h2 class="banner-title" id="banner-title">CASE SOLVED!</h2>
+          <p class="banner-subtitle" id="banner-subtitle">You have correctly indicted the culprit and unraveled the mystery.</p>
+        </div>
+      </div>
+      <button class="btn btn-gold" id="btn-view-solution">
+        <span>View Classified Solution File</span>
+        <span class="btn-icon">🔓</span>
+      </button>
+    </div>
+
+    <!-- Active Tab Content Area -->
+    <main class="workbench-viewport" id="main-content">
+      
+      <!-- TAB 1: BRIEFING & CRIME SCENE -->
+      <section class="tab-pane active" id="pane-briefing">
+        <div class="briefing-grid">
+          <div class="dossier-card primary-card">
+            <div class="card-header">
+              <span class="header-tag">INCIDENT BRIEFING</span>
+              <span class="timestamp" id="briefing-time">23:45 HRS</span>
+            </div>
+            <div class="card-body">
+              <h2 class="section-title">Crime Scene Overview</h2>
+              <p class="narrative-text" id="case-synopsis">Loading case briefing narrative...</p>
+              
+              <div class="crime-specs-grid">
+                <div class="spec-item">
+                  <span class="spec-label">VICTIM</span>
+                  <span class="spec-val highlight-danger" id="spec-victim">Unknown</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">CRIME CATEGORY</span>
+                  <span class="spec-val" id="spec-crime-type">Homicide</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">LOCATION</span>
+                  <span class="spec-val" id="spec-crime-loc">Conservatory</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">ATMOSPHERE</span>
+                  <span class="spec-val" id="spec-atmosphere">Dark & Ominous</span>
+                </div>
+              </div>
+
+              <div class="details-box">
+                <h3 class="details-heading">Forensic Scene Findings</h3>
+                <p id="spec-crime-details">Analyzing crime scene telemetry...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action / Investigation Progress -->
+          <div class="dossier-card secondary-card">
+            <div class="card-header">
+              <span class="header-tag">INVESTIGATOR CHECKLIST</span>
+            </div>
+            <div class="card-body">
+              <div class="checklist-item">
+                <span class="check-icon" id="check-briefing">✅</span>
+                <div>
+                  <strong>Review Crime Scene Briefing</strong>
+                  <p>Study victim details and timeline.</p>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="check-icon" id="check-suspects">⭕</span>
+                <div>
+                  <strong>Interrogate All Suspects</strong>
+                  <p>Cross-examine statements and uncover motives.</p>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="check-icon" id="check-evidence">⭕</span>
+                <div>
+                  <strong>Examine All Forensic Evidence</strong>
+                  <p>Find the smoking gun that shatters the culprit's alibi.</p>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="check-icon" id="check-indictment">⭕</span>
+                <div>
+                  <strong>File Formal Indictment</strong>
+                  <p>Identify the killer with decisive proof.</p>
+                </div>
+              </div>
+
+              <div class="action-card-footer">
+                <button class="btn btn-primary full-width" id="btn-quick-suspects">
+                  <span>Begin Suspect Interrogations</span>
+                  <span class="btn-arrow">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SUSPECTS ROSTER -->
+      <section class="tab-pane" id="pane-suspects">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Persons of Interest</h2>
+            <p class="pane-subtitle">Inspect motives, alibis, and interrogation testimony for each suspect.</p>
+          </div>
+          <div class="filter-controls">
+            <span class="filter-label">Filter:</span>
+            <button class="btn-chip active" data-filter="all">All</button>
+            <button class="btn-chip" data-filter="high">High Suspicion</button>
+          </div>
+        </div>
+        <div class="suspects-grid" id="suspects-container">
+          <!-- Dynamically populated suspect cards -->
+        </div>
+      </section>
+
+      <!-- TAB 3: EVIDENCE LOCKER -->
+      <section class="tab-pane" id="pane-evidence">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Evidence Locker & Crime Lab</h2>
+            <p class="pane-subtitle">Click to examine each item under forensic analysis. All inspections are permanently logged.</p>
+          </div>
+          <div class="evidence-stats-pill">
+            <span id="evidence-viewed-counter">0 of 0 Examined</span>
+          </div>
+        </div>
+        <div class="evidence-grid" id="evidence-container">
+          <!-- Dynamically populated evidence cards -->
+        </div>
+      </section>
+
+      <!-- TAB 4: RED-STRING PINBOARD -->
+      <section class="tab-pane" id="pane-pinboard">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Investigation Pinboard</h2>
+            <p class="pane-subtitle">Visual connection board linking persons of interest to forensic clues and crime scene artifacts.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-reset-board">
+            <span>Re-align Board</span>
+          </button>
+        </div>
+        <div class="corkboard" id="corkboard">
+          <svg class="corkboard-strings" id="corkboard-strings"></svg>
+          <div class="corkboard-content" id="corkboard-content">
+            <!-- Pinboard cards with red yarn connections -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: ACCUSATION CHAMBER -->
+      <section class="tab-pane" id="pane-accusation">
+        <div class="accusation-container">
+          <div class="indictment-box">
+            <div class="indictment-header">
+              <span class="seal-icon">⚖️</span>
+              <h2 class="indictment-title">Grand Jury Indictment Chamber</h2>
+              <p class="indictment-intro">
+                You are about to submit a formal indictment. Accusing the wrong person will consume one of your 3 strikes.
+                If all strikes are exhausted, the commissioner will pull you from the case.
+              </p>
+            </div>
+
+            <form id="accusation-form" class="accusation-form">
+              <div class="form-group">
+                <label for="accuse-suspect-select" class="form-label">SELECT PRIMARY CULPRIT:</label>
+                <select id="accuse-suspect-select" class="form-select" required>
+                  <option value="" disabled selected>-- Choose Suspect from Lineup --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="accuse-rationale" class="form-label">DEDUCTION & RATIONALE (OPTIONAL):</label>
+                <textarea id="accuse-rationale" class="form-textarea" rows="4" placeholder="Explain how the forensic clues disprove their alibi and establish motive and method..."></textarea>
+              </div>
+
+              <div class="indictment-warning">
+                <span class="warning-icon">⚠️</span>
+                <span>Strikes remaining: <strong id="indictment-strikes-count">3 of 3</strong></span>
+              </div>
+
+              <button type="submit" class="btn btn-danger btn-lg full-width" id="btn-submit-accusation">
+                <span class="btn-icon">🔨</span>
+                <span>Hand Down Indictment</span>
+              </button>
+            </form>
+
+            <!-- Accusation History Log -->
+            <div class="accusation-history-section">
+              <h3 class="history-title">Prior Accusation Records</h3>
+              <div class="history-list" id="accusation-history-list">
+                <p class="text-muted">No accusations filed yet in this session.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: DETECTIVE NOTEBOOK -->
+      <section class="tab-pane" id="pane-notebook">
+        <div class="notebook-wrapper">
+          <div class="notebook-header">
+            <div class="notebook-title-area">
+              <span class="notebook-icon">📓</span>
+              <h2 class="pane-title">Investigator's Field Notes</h2>
+            </div>
+            <div class="notebook-status">
+              <span id="notebook-save-status">Saved</span>
+            </div>
+          </div>
+          <div class="notebook-body">
+            <textarea id="detective-notes-area" class="notebook-textarea" placeholder="Record your deductions, suspect contradictions, timeline inconsistencies, and theories here... Changes are saved automatically."></textarea>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MODAL: Case Generator -->
+    <div class="modal-overlay hidden" id="modal-generator">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="modal-icon">⚡</span>
+            <h3 class="modal-title">Generate New Mystery</h3>
+          </div>
+          <button class="modal-close" id="btn-close-generator">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Generate an original, airtight mystery room case powered by Google Gemini AI.
+          </p>
+          
+          <div class="form-group">
+            <label class="form-label" for="gen-theme">INVESTIGATION THEME:</label>
+            <select id="gen-theme" class="form-select">
+              <option value="Victorian Noir" selected>Victorian Gothic Manor (Rain, Aristocracy, Cyanide)</option>
+              <option value="1920s Art Deco">1920s Jazz Age Speakeasy (Mobsters, Stolen Jewels)</option>
+              <option value="Cyberpunk Noir">Neon Neo-Tokyo 2088 (Cyborg Heist, Data Murder)</option>
+              <option value="Orient Express Mystery">Trans-Continental Sleeper Train (Snowbound Intrigue)</option>
+              <option value="Lighthouse Island">Isolated Atlantic Lighthouse (Storm, Missing Keeper)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gen-difficulty">PUZZLE COMPLEXITY:</label>
+            <div class="difficulty-selector">
+              <label class="radio-card">
+                <input type="radio" name="difficulty" value="easy">
+                <span class="radio-content">
+                  <strong>Easy</strong>
+                  <small>Direct clues, obvious contradiction</small>
+                </span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="difficulty" value="medium" checked>
+                <span class="radio-content">
+                  <strong>Medium</strong>
+                  <small>Concealed motives, forensic analysis</small>
+                </span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="difficulty" value="hard">
+                <span class="radio-content">
+                  <strong>Hard</strong>
+                  <small>Subtle red herrings, tight alibis</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="gen-force-mock">
+              <span>Run in offline / procedural mock mode (bypasses live Gemini call)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="btn-cancel-generator">Cancel</button>
+          <button class="btn btn-primary" id="btn-confirm-generate">
+            <span class="btn-icon">✨</span>
+            <span>Architect Case</span>
+          </button>
+        </div>
+
+        <!-- Generation Loading Overlay -->
+        <div class="modal-loading-overlay hidden" id="gen-loading-overlay">
+          <div class="spinner"></div>
+          <h4 class="loading-title" id="gen-loading-msg">Consulting Gemini Neural Mystery Engine...</h4>
+          <p class="loading-subtitle">Synthesizing forensic timeline, suspects, and clues...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Evidence Inspector -->
+    <div class="modal-overlay hidden" id="modal-evidence">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="evidence-type-badge" id="modal-ev-type">PHYSICAL</span>
+            <h3 class="modal-title" id="modal-ev-title">Evidence Inspection</h3>
+          </div>
+          <button class="modal-close" id="btn-close-evidence">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="evidence-inspect-grid">
+            <div class="evidence-graphic-panel">
+              <div class="evidence-icon-large" id="modal-ev-icon">🔍</div>
+              <div class="evidence-loc-tag" id="modal-ev-location">📍 Crime Scene</div>
+            </div>
+            <div class="evidence-inspect-details">
+              <h4 class="inspect-heading">Forensic Description</h4>
+              <p class="inspect-body" id="modal-ev-description">Detailed description...</p>
+              
+              <div class="evidence-hint-box" id="modal-ev-hint-container">
+                <span class="hint-label">LAB NOTES:</span>
+                <p id="modal-ev-hint">Hint...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="btn-dismiss-evidence">Close Case File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Interrogation Transcript -->
+    <div class="modal-overlay hidden" id="modal-suspect">
+      <div class="modal-card modal-lg">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="suspect-avatar-icon" id="modal-sus-avatar">👤</span>
+            <div>
+              <h3 class="modal-title" id="modal-sus-name">Suspect Interrogation</h3>
+              <span class="modal-subtitle" id="modal-sus-occupation">Role</span>
+            </div>
+          </div>
+          <button class="modal-close" id="btn-close-suspect">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="interrogate-grid">
+            <div class="interrogate-section">
+              <h4 class="inspect-heading">Formal Testimony</h4>
+              <blockquote class="dialogue-quote" id="modal-sus-statement">"Testimony..."</blockquote>
+            </div>
+            <div class="interrogate-section">
+              <h4 class="inspect-heading">Claimed Alibi</h4>
+              <p class="alibi-text" id="modal-sus-alibi">Alibi...</p>
+            </div>
+            <div class="interrogate-section">
+              <h4 class="inspect-heading">Potential Motive</h4>
+              <p class="motive-text" id="modal-sus-motive">Motive...</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger btn-sm" id="btn-accuse-from-modal">Indict this Suspect</button>
+          <button class="btn btn-secondary" id="btn-dismiss-suspect">Return to Roster</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Confidential Solution File -->
+    <div class="modal-overlay hidden" id="modal-solution">
+      <div class="modal-card modal-xl solution-modal-card">
+        <div class="modal-header solution-header">
+          <div class="modal-title-group">
+            <span class="confidential-stamp">CONFIDENTIAL DECLASSIFIED</span>
+            <h3 class="modal-title">Official Case Solution & Confession</h3>
+          </div>
+          <button class="modal-close" id="btn-close-solution">✕</button>
+        </div>
+        <div class="modal-body" id="solution-modal-body">
+          <div class="solution-grid">
+            <div class="culprit-spotlight-card">
+              <span class="spotlight-label">THE TRUE CULPRIT</span>
+              <div class="culprit-avatar" id="sol-culprit-avatar">🔪</div>
+              <h2 class="culprit-name" id="sol-culprit-name">Lord Vance</h2>
+              <span class="culprit-role" id="sol-culprit-role">Botanist</span>
+            </div>
+            <div class="solution-details">
+              <div class="sol-block">
+                <h4 class="sol-heading">Motive</h4>
+                <p id="sol-motive" class="sol-text">Loading motive...</p>
+              </div>
+              <div class="sol-block">
+                <h4 class="sol-heading">Method of Execution</h4>
+                <p id="sol-method" class="sol-text">Loading method...</p>
+              </div>
+              <div class="sol-block">
+                <h4 class="sol-heading">Conclusive Smoking Gun</h4>
+                <div class="conclusive-evidence-highlight" id="sol-evidence-highlight">
+                  Evidence title
+                </div>
+              </div>
+              <div class="sol-block">
+                <h4 class="sol-heading">Deductive Synthesis</h4>
+                <p id="sol-explanation" class="sol-text">Loading explanation...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="btn-dismiss-solution">Acknowledge & Close File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+  </div>
+
+  <!-- Audio synthesizers and client application scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

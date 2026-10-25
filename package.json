@@ -1,0 +1,38 @@
+{
+  "name": "ai-mystery-room",
+  "version": "1.0.0",
+  "description": "AI-powered procedural mystery investigation room game and detective workbench",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --forceExit",
+    "test:live": "cross-env RUN_LIVE_GEMINI=true node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=gemini-live --runInBand --forceExit"
+  },
+  "keywords": [
+    "ai",
+    "mystery",
+    "gemini",
+    "escape-room",
+    "detective",
+    "procedural"
+  ],
+  "author": "Antigravity Sleuth Team",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "mongoose": "^9.11.4",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "jest": "^30.5.2",
+    "supertest": "^7.3.1"
+  }
+}
